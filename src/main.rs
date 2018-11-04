@@ -7,6 +7,7 @@ extern crate yaml_rust;
 
 use arguments::*;
 use hyper::rt::{self, Future, Stream};
+use std::str::from_utf8;
 use yaml_to_json::*;
 
 type Client = hyper::Client<hyper::client::HttpConnector>;
@@ -33,15 +34,20 @@ fn build_request(args: &Arguments) -> hyper::http::Result<Request> {
     builder.body(body)
 }
 
-fn send_request(client: &Client, request: Request) -> impl Future<Item=(), Error=()> {
+fn send_request(client: &Client, request: Request) -> impl Future<Item = (), Error = ()> {
     client
         .request(request)
         .and_then(|res| {
-            println!("Status: {}", res.status());
+            println!("{:?} {}", res.version(), res.status());
+            for (key, value) in res.headers() {
+                let value_str = from_utf8(value.as_bytes()).unwrap();
+                println!("{}: {}", key, value_str);
+            }
+            println!("");
             res.into_body().concat2()
         }).and_then(|body| {
             let s = ::std::str::from_utf8(&body).expect("Invalid UTF-8");
-            println!("Body: {}", s);
+            println!("{}", s);
             Ok(())
         }).map_err(|err| {
             println!("Error: {}", err);
