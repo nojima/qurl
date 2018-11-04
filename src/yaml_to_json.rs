@@ -148,8 +148,14 @@ fn test_integer() {
 
 #[test]
 fn test_string() {
-    assert_eq!(yaml_string_to_json_string("\"basic string\""), "\"basic string\"");
-    assert_eq!(yaml_string_to_json_string("\"line\\nbreak\""), "\"line\\nbreak\"");
+    assert_eq!(
+        yaml_string_to_json_string("\"basic string\""),
+        "\"basic string\""
+    );
+    assert_eq!(
+        yaml_string_to_json_string("\"line\\nbreak\""),
+        "\"line\\nbreak\""
+    );
 }
 
 #[test]
@@ -166,7 +172,10 @@ fn test_array() {
 
 #[test]
 fn test_hash() {
-    assert_eq!(yaml_string_to_json_string("{hello: true}"), "{\"hello\":true}");
+    assert_eq!(
+        yaml_string_to_json_string("{hello: true}"),
+        "{\"hello\":true}"
+    );
     assert_eq!(yaml_string_to_json_string("{}"), "{}");
 }
 
