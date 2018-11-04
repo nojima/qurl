@@ -2,27 +2,57 @@ mod arguments;
 mod yaml_to_json;
 
 extern crate clap;
+extern crate hyper;
 extern crate yaml_rust;
 
 use arguments::*;
+use hyper::rt::{self, Future, Stream};
 use yaml_to_json::*;
+
+type Client = hyper::Client<hyper::client::HttpConnector>;
+type Request = hyper::Request<hyper::Body>;
+
+fn create_http_client() -> Client {
+    let mut builder = hyper::Client::builder();
+    builder.keep_alive(false);
+    builder.build_http()
+}
+
+fn build_request(args: &Arguments) -> hyper::http::Result<Request> {
+    let mut builder = hyper::Request::builder();
+    builder.uri(&args.url);
+    builder.method(&args.method as &str);
+    builder.header("User-Agent", "qurl/0.1.0");
+    if args.yaml.is_some() {
+        builder.header("Content-Type", "application/json; charset=utf-8");
+    }
+    let body = match args.yaml {
+        None => hyper::Body::empty(),
+        Some(ref y) => yaml_string_to_json_string(y).into(),
+    };
+    builder.body(body)
+}
+
+fn send_request(client: &Client, request: Request) -> impl Future<Item=(), Error=()> {
+    client
+        .request(request)
+        .and_then(|res| {
+            println!("Status: {}", res.status());
+            res.into_body().concat2()
+        }).and_then(|body| {
+            let s = ::std::str::from_utf8(&body).expect("Invalid UTF-8");
+            println!("Body: {}", s);
+            Ok(())
+        }).map_err(|err| {
+            println!("Error: {}", err);
+        })
+}
 
 fn main() {
     let args = parse_arguments();
 
-    println!("METHOD: {}", args.method);
-    println!("URL: {}", args.url);
-
-    if let Some(yaml) = args.yaml {
-        println!("JSON: {}", yaml);
-
-        let docs = yaml_rust::YamlLoader::load_from_str(&yaml).unwrap();
-        let doc = &docs[0];
-
-        let mut out = String::new();
-        {
-            yaml_to_json(doc, &mut out);
-        }
-        println!("Emit: {}", out);
-    }
+    let client = create_http_client();
+    let request = build_request(&args).unwrap();
+    let future = send_request(&client, request);
+    rt::run(future);
 }

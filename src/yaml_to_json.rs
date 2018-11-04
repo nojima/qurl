@@ -126,8 +126,7 @@ pub fn yaml_to_json(yaml: &Yaml, out: &mut String) {
     }
 }
 
-#[cfg(test)]
-fn yaml_string_to_json_string(yaml_str: &str) -> String {
+pub fn yaml_string_to_json_string(yaml_str: &str) -> String {
     let docs = YamlLoader::load_from_str(yaml_str).unwrap();
     let mut out = String::new();
     yaml_to_json(&docs[0], &mut out);

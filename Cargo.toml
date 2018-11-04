@@ -5,4 +5,5 @@ authors = ["Yusuke Nojima <nojima@ynojima.com>"]
 
 [dependencies]
 clap = "2.32"
+hyper = "0.12"
 yaml-rust = "0.4"
